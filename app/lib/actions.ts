@@ -7,7 +7,6 @@ import { redirect } from 'next/navigation';
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
 
-
 export async function authenticate(
   prevState: string | undefined,
   formData: FormData,
@@ -95,4 +94,57 @@ export async function deleteInvoice(id: string) {
     console.error(error);
   }
   revalidatePath('/dashboard/invoices');
+}
+
+const CustomerFormSchema = z.object({
+  id: z.string().optional(),
+  name: z.string(),
+  email: z.string().email(),
+  image_url: z.string(),
+});
+
+export async function createCustomer(formData: FormData) {
+  const { name, email, image_url } = CustomerFormSchema.parse({
+    name: formData.get('name'),
+    email: formData.get('email'),
+    image_url: formData.get('image_url'),
+  });
+  try {
+    await sql`
+      INSERT INTO customers (name, email, image_url)
+      VALUES (${name}, ${email}, ${image_url})
+    `;
+  } catch (error) {
+    console.error(error);
+  }
+  revalidatePath('/dashboard/customers');
+  redirect('/dashboard/customers');
+}
+
+export async function updateCustomer(id: string, formData: FormData) {
+  const { name, email, image_url } = CustomerFormSchema.parse({
+    name: formData.get('name'),
+    email: formData.get('email'),
+    image_url: formData.get('image_url'),
+  });
+  try {
+    await sql`
+      UPDATE customers
+      SET name = ${name}, email = ${email}, image_url = ${image_url}
+      WHERE id = ${id}
+    `;
+  } catch (error) {
+    console.error(error);
+  }
+  revalidatePath('/dashboard/customers');
+  redirect('/dashboard/customers');
+}
+
+export async function deleteCustomer(id: string) {
+  try {
+    await sql`DELETE FROM customers WHERE id = ${id}`;
+  } catch (error) {
+    console.error(error);
+  }
+  revalidatePath('/dashboard/customers');
 }
